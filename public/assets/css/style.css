@@ -1,0 +1,228 @@
+:root {
+    --certa-navy: #1b2a4a;
+    --certa-navy-dark: #14213a;
+    --certa-green: #1e8e5a;
+    --certa-red: #d63838;
+    --certa-bg: #f4f6fb;
+    --sidebar-width: 240px;
+}
+
+body {
+    background-color: var(--certa-bg);
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+.text-dark-navy { color: var(--certa-navy); }
+
+/* ===== Layout ===== */
+.certa-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.certa-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: var(--sidebar-width);
+    min-width: 0;
+}
+
+.certa-header {
+    height: 64px;
+    background: #fff;
+    border-bottom: 1px solid #e6e9f0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.certa-main { flex: 1; }
+
+/* ===== Sidebar ===== */
+.certa-sidebar {
+    width: var(--sidebar-width);
+    background: var(--certa-navy);
+    color: #fff;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1030;
+    transition: transform .25s ease;
+}
+
+.certa-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 1.25rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.certa-sidebar-nav { padding: .75rem; }
+
+.certa-nav-link {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    color: rgba(255,255,255,.75);
+    padding: .65rem .9rem;
+    border-radius: .5rem;
+    text-decoration: none;
+    margin-bottom: .25rem;
+    font-size: .92rem;
+}
+
+.certa-nav-link:hover { background: rgba(255,255,255,.08); color: #fff; }
+
+.certa-nav-link.active {
+    background: #fff;
+    color: var(--certa-navy);
+    font-weight: 600;
+}
+
+.certa-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 1020;
+}
+
+@media (max-width: 991.98px) {
+    .certa-sidebar { transform: translateX(-100%); }
+    .certa-sidebar.show { transform: translateX(0); }
+    .certa-content { margin-left: 0; }
+    .certa-sidebar-overlay.show { display: block; }
+}
+
+/* ===== Cards ===== */
+.certa-card {
+    background: #fff;
+    border-radius: .75rem;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    height: 100%;
+}
+
+.certa-card-dark { background: var(--certa-navy); color: #fff; }
+.certa-card-danger { background: var(--certa-red); color: #fff; }
+
+.certa-card-label {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    margin-bottom: .35rem;
+    opacity: .9;
+}
+
+.certa-card-number { font-size: 1.9rem; font-weight: 700; }
+
+.certa-panel {
+    background: #fff;
+    border-radius: .75rem;
+    padding: 1.1rem 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.certa-panel-title {
+    font-size: .8rem;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: .9rem;
+    letter-spacing: .02em;
+}
+
+.certa-panel-title-bar {
+    background: var(--certa-navy);
+    color: #fff;
+    font-weight: 600;
+    padding: .6rem 1rem;
+    border-radius: .5rem;
+    margin: -1.1rem -1.25rem 0 -1.25rem;
+}
+
+/* ===== Widgets ===== */
+.certa-shift-row { padding: .5rem 0; border-bottom: 1px dashed #eee; }
+.certa-shift-row:last-child { border-bottom: none; }
+
+.certa-shift-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: .8rem;
+}
+
+.certa-status-box {
+    color: #fff;
+    font-weight: 700;
+    border-radius: .5rem;
+    padding: 1.5rem .5rem;
+    font-size: .85rem;
+}
+
+.certa-activity-row {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .5rem 0;
+    font-size: .88rem;
+    border-bottom: 1px dashed #eee;
+}
+
+.certa-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--certa-navy);
+    flex-shrink: 0;
+}
+
+.certa-detail-group { margin-bottom: .75rem; }
+.certa-detail-group-title {
+    font-size: .7rem;
+    font-weight: 700;
+    color: #888;
+    margin-bottom: .35rem;
+}
+.certa-detail-row {
+    font-size: .85rem;
+    padding: .2rem 0;
+}
+
+.certa-upload-box {
+    border: 2px dashed #d7dce5;
+    border-radius: .5rem;
+    padding: 2rem 1rem;
+    color: #888;
+    cursor: pointer;
+    transition: border-color .15s ease;
+}
+.certa-upload-box:hover { border-color: var(--certa-navy); }
+
+.certa-bell-btn { width: 40px; height: 40px; }
+.certa-bell-dot {
+    position: absolute; top: 4px; right: 4px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--certa-red);
+    border: 2px solid #fff;
+}
+
+.certa-toast-notif {
+    top: 76px; right: 20px;
+    background: #2196f3;
+    color: #fff;
+    padding: 1rem 1.25rem;
+    border-radius: .6rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,.15);
+    z-index: 1080;
+    max-width: 320px;
+}
+
+.certa-logo-img {
+    max-height: 70px; /* Ubah angka ini (misal 25px - 40px) sampai ukurannya pas */
+    width: auto;
+    object-fit: contain;
+}
