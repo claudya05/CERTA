@@ -18,7 +18,7 @@ class AssetModel extends Model
      * Ambil semua aset aktif, dikelompokkan per kategori.
      * Dipakai di Form CERTA (render tabel dinamis) & Data Pengecekan (grouping card).
      *
-     * @return array<string, array> ['Peralatan Utama' => [...aset], 'Power & Genset' => [...]]
+     * @return array<string, array>
      */
     public function getGroupedByCategory(): array
     {
@@ -38,21 +38,27 @@ class AssetModel extends Model
         return $grouped;
     }
 
-    /** Opsi radio button sesuai input_type, dipakai di view Form CERTA. */
+    /** 
+     * Opsi radio button sesuai input_type, dipakai di view Form CERTA. 
+     */
     public static function getOptions(string $inputType): array
     {
         return match ($inputType) {
-            'status_2'   => ['Normal', 'Tidak Normal'],
-            'percentage' => ['0', '25', '75', '100'],
-            default      => ['Normal', 'Standby', 'Off'], // status_3
+            'status_3', 'normal_standby_off' => ['Normal', 'Standby', 'Off'],
+            'status_2', 'normal_off'         => ['Normal', 'Off'],
+            'normal_tidak_normal'            => ['Normal', 'Tidak Normal'],
+            'percentage'                     => ['0%', '25%', '75%', '100%'],
+            default                          => ['Normal', 'Off'],
         };
     }
 
-    /** Nilai yang dianggap "bermasalah" untuk keperluan badge/summary. */
+    /** 
+     * Nilai yang dianggap "bermasalah" untuk keperluan badge / laporan summary. 
+     */
     public static function isBermasalah(string $inputType, string $kondisi): bool
     {
         if ($inputType === 'percentage') {
-            return (int) $kondisi === 0;
+            return in_array(trim($kondisi), ['0', '0%'], true);
         }
 
         return in_array($kondisi, ['Off', 'Tidak Normal'], true);

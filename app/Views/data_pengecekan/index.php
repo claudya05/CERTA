@@ -19,7 +19,7 @@
     <button type="submit" class="btn btn-sm btn-outline-secondary">Terapkan</button>
 
     <a href="<?= base_url('data-pengecekan/export') ?>?<?= http_build_query(request()->getGet()) ?>"
-   class="btn btn-sm btn-success ms-auto">
+       class="btn btn-sm btn-success ms-auto">
         <i class="bi bi-download"></i> Export Excel
     </a>
 </form>
@@ -33,59 +33,83 @@
 
     <?php foreach ($checklists as $c): ?>
         <div class="col-md-6 col-lg-4">
-            <div class="certa-panel h-100">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                        <h6 class="fw-bold mb-0"><?= esc($c['nama_petugas']) ?></h6>
-                        <small class="text-muted">
-                            <?= format_tanggal_indo($c['tanggal']) ?> &middot; Pukul <?= substr($c['jam_pengecekan'], 0, 5) ?> WIB
-                        </small>
+            <div class="certa-panel h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <!-- Header Card -->
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="fw-bold mb-0"><?= esc($c['nama_petugas']) ?></h6>
+                            <small class="text-muted">
+                                <?= format_tanggal_indo($c['tanggal']) ?> &middot; Pukul <?= substr($c['jam_pengecekan'], 0, 5) ?> WIB
+                            </small>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <?php if (!empty($c['photos'])): ?>
+                                <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal"
+                                        data-bs-target="#photoModal<?= $c['id'] ?>">
+                                    <i class="bi bi-camera-fill text-primary"></i>
+                                </button>
+                            <?php endif; ?>
+                            <a href="<?= base_url('data-pengecekan/delete/' . $c['id']) ?>"
+                               class="btn btn-sm btn-light"
+                               onclick="return confirm('Hapus data pengecekan ini?');">
+                                <i class="bi bi-trash-fill text-danger"></i>
+                            </a>
+                        </div>
                     </div>
-                    <div class="d-flex gap-1">
-                        <?php if (!empty($c['photos'])): ?>
-                            <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal"
-                                    data-bs-target="#photoModal<?= $c['id'] ?>">
-                                <i class="bi bi-camera-fill text-primary"></i>
-                            </button>
-                        <?php endif; ?>
-                        <a href="<?= base_url('data-pengecekan/delete/' . $c['id']) ?>"
-                           class="btn btn-sm btn-light"
-                           onclick="return confirm('Hapus data pengecekan ini?');">
-                            <i class="bi bi-trash-fill text-danger"></i>
-                        </a>
-                    </div>
+
+                    <!-- Detail Per Kategori & Aset -->
+                    <?php foreach ($c['grouped_detail'] as $categoryName => $items): ?>
+                        <div class="certa-detail-group">
+                            <div class="certa-detail-group-title"><?= strtoupper(esc($categoryName)) ?></div>
+                            <?php foreach ($items as $item): ?>
+                                <div class="certa-detail-row py-1">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><?= esc($item['asset_name']) ?></span>
+                                        <span class="<?= status_badge_class($item['kondisi']) ?>">
+                                            <?= kondisi_display($item['input_type'], $item['kondisi']) ?>
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- 1. CATATAN DETAIL PER ASET (jika ada di tabel checklist_detail) -->
+                                    <?php if (!empty($item['catatan'])): ?>
+                                        <small class="text-muted d-block fst-italic" style="font-size: 11px; margin-top: -2px;">
+                                            <i class="bi bi-chat-left-text me-1"></i><?= esc($item['catatan']) ?>
+                                        </small>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
 
-                <?php foreach ($c['grouped_detail'] as $categoryName => $items): ?>
-                    <div class="certa-detail-group">
-                        <div class="certa-detail-group-title"><?= strtoupper(esc($categoryName)) ?></div>
-                        <?php foreach ($items as $item): ?>
-                            <div class="d-flex justify-content-between certa-detail-row">
-                                <span><?= esc($item['asset_name']) ?></span>
-                                <span class="<?= status_badge_class($item['kondisi']) ?>">
-                                    <?= kondisi_display($item['input_type'], $item['kondisi']) ?>
-                                </span>
-                            </div>
-                        <?php endforeach; ?>
+                <!-- 2. CATATAN UTAMA PENGECEKAN (jika ada di tabel checklist) -->
+                <?php if (!empty($c['catatan'])): ?>
+                    <div class="mt-3 p-2 bg-light rounded border-start border-3 border-info">
+                        <small class="text-muted d-block fw-bold mb-1" style="font-size: 10px; letter-spacing: 0.5px;">CATATAN UTAMA:</small>
+                        <small class="text-dark d-block" style="font-size: 12px; line-height: 1.4;">
+                            <?= nl2br(esc($c['catatan'])) ?>
+                        </small>
                     </div>
-                <?php endforeach; ?>
+                <?php endif; ?>
+
             </div>
         </div>
 
         <!-- Modal preview foto -->
         <?php if (!empty($c['photos'])): ?>
-    <div class="modal fade" id="photoModal<?= $c['id'] ?>" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-body p-0 text-center bg-dark">
-                    <?php foreach ($c['photos'] as $p): ?>
-                        <img src="<?= base_url($p['file_path']) ?>" class="img-fluid mb-2 rounded" alt="<?= esc($p['original_name']) ?>">
-                    <?php endforeach; ?>
+            <div class="modal fade" id="photoModal<?= $c['id'] ?>" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-body p-0 text-center bg-dark">
+                            <?php foreach ($c['photos'] as $p): ?>
+                                <img src="<?= base_url($p['file_path']) ?>" class="img-fluid mb-2 rounded" alt="<?= esc($p['original_name']) ?>">
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-<?php endif; ?> 
+        <?php endif; ?> 
     <?php endforeach; ?>
 </div>
 

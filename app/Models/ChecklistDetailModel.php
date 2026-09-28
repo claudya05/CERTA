@@ -10,7 +10,8 @@ class ChecklistDetailModel extends Model
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     
-    protected $allowedFields    = ['checklist_id', 'asset_id', 'kondisi', 'is_bermasalah'];
+    // Tambahkan 'catatan' jika kolom catatan ada di tabel checklist_detail
+    protected $allowedFields    = ['checklist_id', 'asset_id', 'kondisi', 'is_bermasalah', 'catatan'];
     
     // Konfigurasi Timestamps (Hanya created_at)
     protected $useTimestamps    = true;
@@ -19,10 +20,11 @@ class ChecklistDetailModel extends Model
 
     protected $returnType       = 'array';
 
-    /** Detail per aset untuk 1 checklist, di-join dengan nama & kategori aset. */
+    /** Detail per aset untuk 1 checklist, di-join dengan nama & kategori aset serta catatan dari tabel checklist. */
     public function getByChecklist(int $checklistId): array
     {
-        return $this->select('checklist_detail.*, m_asset.name as asset_name, m_asset.input_type, m_asset_category.name as category_name')
+        return $this->select('checklist_detail.*, checklist.catatan as catatan_checklist, m_asset.name as asset_name, m_asset.input_type, m_asset_category.name as category_name')
+            ->join('checklist', 'checklist.id = checklist_detail.checklist_id', 'left')
             ->join('m_asset', 'm_asset.id = checklist_detail.asset_id')
             ->join('m_asset_category', 'm_asset_category.id = m_asset.category_id')
             ->where('checklist_detail.checklist_id', $checklistId)
@@ -31,7 +33,7 @@ class ChecklistDetailModel extends Model
             ->findAll();
     }
 
-    /** Daftar aset bermasalah TERKINI (dari checklist paling terakhir per aset). */
+    /** Daftar aset bermasalah TERKINI (dilengkapi data catatan dan nama petugas). */
     public function getLatestProblems(): array
     {
         // Ambil id checklist_detail terbaru per asset_id, lalu filter yang bermasalah.
@@ -39,7 +41,8 @@ class ChecklistDetailModel extends Model
             ->select('MAX(cd1.id) as max_id')
             ->groupBy('cd1.asset_id');
 
-        return $this->select('checklist_detail.*, m_asset.name as asset_name')
+        return $this->select('checklist_detail.*, checklist.catatan as catatan_checklist, checklist.nama_petugas, m_asset.name as asset_name')
+            ->join('checklist', 'checklist.id = checklist_detail.checklist_id', 'left')
             ->join('m_asset', 'm_asset.id = checklist_detail.asset_id')
             ->whereIn('checklist_detail.id', $sub)
             ->where('checklist_detail.is_bermasalah', 1)
@@ -49,7 +52,7 @@ class ChecklistDetailModel extends Model
     /** Riwayat kondisi 1 aset dalam rentang tanggal, untuk Grafik Tren Analisis Data. */
     public function getHistoryByAsset(int $assetId, string $dateFrom, string $dateTo): array
     {
-        return $this->select('checklist_detail.kondisi, checklist.tanggal, checklist.jam_pengecekan')
+        return $this->select('checklist_detail.kondisi, checklist_detail.catatan, checklist.tanggal, checklist.jam_pengecekan')
             ->join('checklist', 'checklist.id = checklist_detail.checklist_id')
             ->where('checklist_detail.asset_id', $assetId)
             ->where('checklist.tanggal >=', $dateFrom)

@@ -7,7 +7,6 @@ use App\Models\ChecklistDetailModel;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
-
 class AnalisisData extends BaseController
 {
     public function index()
@@ -23,83 +22,125 @@ class AnalisisData extends BaseController
     }
 
     /**
-     * Endpoint AJAX (dipanggil tombol "Tampilkan Grafik") -> JSON untuk Chart.js.
-     * GET /analisis-data/chart-data?asset_id=1&date_from=...&date_to=...
+     * Endpoint Data AJAX untuk Chart.js
      */
-    public function getChartData()
+    public function chartData()
     {
         $assetId  = (int) $this->request->getGet('asset_id');
-        $dateFrom = $this->request->getGet('date_from') ?? date('Y-m-01');
-        $dateTo   = $this->request->getGet('date_to') ?? date('Y-m-d');
+        $dateFrom = $this->request->getGet('date_from');
+        $dateTo   = $this->request->getGet('date_to');
+
+        if (!$dateFrom) $dateFrom = date('Y-m-d', strtotime('-30 days'));
+        if (!$dateTo)   $dateTo   = date('Y-m-d');
 
         $assetModel  = new AssetModel();
         $detailModel = new ChecklistDetailModel();
 
-        $asset   = $assetModel->find($assetId);
-        $history = $detailModel->getHistoryByAsset($assetId, $dateFrom, $dateTo);
+        $asset = $assetModel->find($assetId);
+
+        // Query JOIN disesuaikan dengan nama tabel DB Anda: checklist_detail & checklist
+        $history = $detailModel->select('checklist_detail.*, checklist.tanggal, checklist.jam_pengecekan, checklist.created_at')
+            ->join('checklist', 'checklist.id = checklist_detail.checklist_id')
+            ->where('checklist_detail.asset_id', $assetId)
+            ->where('checklist.tanggal >=', $dateFrom)
+            ->where('checklist.tanggal <=', $dateTo)
+            ->orderBy('checklist.tanggal', 'ASC')
+            ->orderBy('checklist.jam_pengecekan', 'ASC')
+            ->orderBy('checklist.created_at', 'ASC')
+            ->findAll();
 
         $labels = [];
         $values = [];
 
-        foreach ($history as $row) {
-            $labels[] = date('d/m/Y', strtotime($row['tanggal'])) . ' ' . substr($row['jam_pengecekan'], 0, 5);
+        // Deteksi Tipe Perangkat
+        $assetName  = $asset['name'] ?? $asset['asset_name'] ?? 'Aset';
+        $assetLower = strtolower($assetName);
+        
+        $deviceType = 'binary_on_off';
 
-            // Untuk chart: percentage -> angka 0-100, status_3 -> mapping Off=0/Standby=50/On=100
-            if ($asset && $asset['input_type'] === 'percentage') {
-                $values[] = (int) $row['kondisi'];
+        if (str_contains($assetLower, 'pac')) {
+            $deviceType = 'pac';
+        } elseif (str_contains($assetLower, 'solar')) {
+            $deviceType = 'solar';
+        } elseif (str_contains($assetLower, 'baterai') && !str_contains($assetLower, 'ac')) {
+            $deviceType = 'baterai';
+        }
+
+        foreach ($history as $row) {
+            // Label Sumbu X (Tanggal & Jam Input)
+            $tglRaw = $row['tanggal'] ?? $row['created_at'] ?? '';
+            $tgl    = !empty($tglRaw) ? date('d/m/Y', strtotime($tglRaw)) : '';
+            
+            $jamRaw = $row['jam_pengecekan'] ?? (!empty($row['created_at']) ? date('H:i:s', strtotime($row['created_at'])) : '');
+            $jam    = !empty($jamRaw) ? ' ' . date('H:i', strtotime($jamRaw)) : '';
+
+            $labels[] = $tgl . $jam;
+
+            // Mapping Nilai Grafik
+            $kondisi  = trim((string)($row['kondisi'] ?? ''));
+            $valClean = str_replace('%', '', $kondisi);
+
+            if (is_numeric($valClean)) {
+                $values[] = (float) $valClean;
             } else {
-                $values[] = match ($row['kondisi']) {
-                    'Off', 'Tidak Normal' => 0,
-                    'Standby'             => 50,
-                    default               => 100, // Normal
-                };
+                $valLower = strtolower($kondisi);
+                if (in_array($valLower, ['normal', 'on', 'baik'])) {
+                    $values[] = 100;
+                } elseif ($valLower === 'standby') {
+                    $values[] = 50;
+                } else {
+                    $values[] = 0;
+                }
             }
         }
 
         return $this->response->setJSON([
-            'asset_name' => $asset['name'] ?? '',
-            'input_type' => $asset['input_type'] ?? 'status_3',
-            'labels'     => $labels,
-            'values'     => $values,
+            'asset_name'  => $assetName,
+            'device_type' => $deviceType,
+            'labels'      => $labels,
+            'values'      => $values,
         ]);
     }
 
-    /** Export grafik/tren yang sedang tampil ke PDF — implementasikan dengan library dompdf/mpdf sesuai kebutuhan. */
+    public function getChartData()
+    {
+        return $this->chartData();
+    }
+
+    /**
+     * Export Grafik ke PDF
+     */
     public function exportPdf()
-{
-    // Ambil data POST dari form hidden
-    $chartImage = $this->request->getPost('chart_image');
-    $assetId    = $this->request->getPost('asset_id');
-    $dateFrom   = $this->request->getPost('date_from') ?? date('Y-m-01');
-    $dateTo     = $this->request->getPost('date_to') ?? date('Y-m-d');
+    {
+        $chartImage = $this->request->getPost('chart_image');
+        $assetId    = $this->request->getPost('asset_id');
+        $dateFrom   = $this->request->getPost('date_from');
+        $dateTo     = $this->request->getPost('date_to');
 
-    // Ambil info nama aset jika ada
-    $assetModel = new AssetModel();
-    $asset      = $assetModel->find($assetId);
-    $assetName  = $asset ? $asset['name'] : 'Semua Aset';
+        $assetModel = new AssetModel();
+        $asset      = $assetModel->find($assetId);
+        $assetName  = $asset ? ($asset['name'] ?? $asset['asset_name'] ?? 'Aset') : 'Aset';
 
-    $data = [
-        'chartImage' => $chartImage,
-        'assetName'  => $assetName,
-        'dateFrom'   => $dateFrom,
-        'dateTo'     => $dateTo,
-    ];
+        $data = [
+            'chartImage' => $chartImage,
+            'assetName'  => $assetName,
+            'dateFrom'   => $dateFrom ? date('d/m/Y', strtotime($dateFrom)) : '-',
+            'dateTo'     => $dateTo ? date('d/m/Y', strtotime($dateTo)) : '-',
+        ];
 
-    // Render tampilan HTML PDF
-    $html = view('pdf/export_grafik', $data);
+        $html = view('pdf/export_grafik', $data);
 
-    // Konfigurasi Dompdf
-    $options = new Options();
-    $options->set('isRemoteEnabled', true);
-    $options->set('defaultFont', 'Helvetica');
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Helvetica');
 
-    $dompdf = new Dompdf($options);
-    $dompdf->loadHtml($html);
-    $dompdf->setPaper('A4', 'landscape');
-    $dompdf->render();
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
 
-    $filename = 'grafik-analisis-' . $dateFrom . '_sd_' . $dateTo . '.pdf';
-    $dompdf->stream($filename, ['Attachment' => 1]);
-    exit;
-}
+        $filename = 'Grafik_Analisis_' . str_replace(' ', '_', $assetName) . '_' . date('Ymd') . '.pdf';
+        $dompdf->stream($filename, ['Attachment' => 1]);
+        exit;
+    }
 }

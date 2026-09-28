@@ -226,3 +226,12 @@ body {
     width: auto;
     object-fit: contain;
 }
+
+/* Efek hover pada baris aset bermasalah */
+.table-aset tbody tr.row-clickable {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.table-aset tbody tr.row-clickable:hover {
+    background-color: #f1f5f9;
+}

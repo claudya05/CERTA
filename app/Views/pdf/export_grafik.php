@@ -1,57 +1,40 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Export Grafik Tren</title>
+    <meta charset="utf-8">
+    <title>Export Grafik Analisis</title>
     <style>
-        body {
-            font-family: Helvetica, Arial, sans-serif;
-            color: #333;
-            margin: 20px;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-        }
-        .header h2 {
-            margin: 0;
-            font-size: 18px;
-            text-transform: uppercase;
-        }
-        .header p {
-            margin: 5px 0 0;
-            font-size: 12px;
-            color: #555;
-        }
-        .chart-container {
-            text-align: center;
-            margin-top: 15px;
-        }
-        .chart-container img {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid #ddd;
-            padding: 5px;
-        }
+        body { font-family: Helvetica, Arial, sans-serif; margin: 20px; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #0c2340; padding-bottom: 10px; margin-bottom: 20px; }
+        .header h2 { margin: 0; color: #0c2340; }
+        .header p { margin: 5px 0 0 0; font-size: 13px; color: #666; }
+        .info-table { width: 100%; margin-bottom: 20px; font-size: 13px; }
+        .info-table td { padding: 4px 0; }
+        .chart-box { text-align: center; margin-top: 15px; }
+        .chart-box img { width: 100%; max-height: 420px; object-fit: contain; }
     </style>
 </head>
 <body>
-
     <div class="header">
-        <h2>Laporan Grafik Tren Analisis Data</h2>
-        <p>Aset: <strong><?= esc($assetName) ?></strong> | Periode: <?= $dateFrom ?> s/d <?= $dateTo ?></p>
+        <h2>LAPORAN ANALISIS DATA HISTORIS</h2>
+        <p>Cek Rutin Data Center (CERTA)</p>
     </div>
 
-    <div class="chart-container">
-        <?php if ($chartImage): ?>
-            <!-- Menampilkan data gambar Base64 langsung ke elemen <img> -->
-            <img src="<?= $chartImage ?>" alt="Grafik Tren">
-        <?php else: ?>
-            <p style="color: red;">Grafik tidak dapat dimuat.</p>
-        <?php endif; ?>
-    </div>
+    <table class="info-table">
+        <tr>
+            <td width="15%"><strong>Nama Aset</strong></td>
+            <td width="2%">:</td>
+            <td><?= esc($assetName) ?></td>
+        </tr>
+        <tr>
+            <td><strong>Periode</strong></td>
+            <td>:</td>
+            <td><?= esc($dateFrom) ?> s/d <?= esc($dateTo) ?></td>
+        </tr>
+    </table>
 
+    <div class="chart-box">
+        <img src="<?= $chartImage ?>" alt="Grafik Tren">
+    </div>
 </body>
-</html> 
+</html>
